@@ -47,63 +47,67 @@ def get_logs(starting_dir: str, show=True):
         pprint([os.path.basename(log) for log in logs])
     return logs
 
+def get_log_data(logs: list[str]) -> list[pd.DataFrame]:
+    ''''''
+    r_encode = r'encode_(\d{2})\.(\d{2})\.(\d{4}) (\d{2})-(\d{2})-(\d{2})\.txt'
+    r_source = r'"Path": "(.*)",'
+    r_dest = r'"File": "(.*)",'
+    r_encoder = r'"Video": {\n    "Encoder": "(.*)",'
+    r_preset = r'"Preset": "(.*)",'
+    r_RF = r'"Quality": (.*),'
+    r_speed = r'work: average encoding speed for job is (.*) fps'
+    dfs = []
+    for log in logs:
+        file_content = ''
+        with open(log, 'r') as f:
+            file_content = f.read()
+        e_grp = search(pattern=r_encode, string=os.path.basename(log)).groups()
+        encode = f'{e_grp[2]}-{e_grp[0]}-{e_grp[1]} {e_grp[3]}:{e_grp[4]}:{e_grp[5]}'
+        source = search(pattern=r_source, string=file_content).group(1)
+        dest = search(pattern=r_dest, string=file_content).group(1)
+        encoder = search(pattern=r_encoder, string=file_content).group(1)
+        preset = search(pattern=r_preset, string=file_content).group(1)
+        qualRF = search(pattern=r_RF, string=file_content).group(1)
+        speed = search(pattern=r_speed, string=file_content).group(1)
+        meta_d = {
+            'Encode': [encode],
+            'Source': [os.path.basename(source)],       # TODO: reuse these paths to get video metadata
+            'Destination': [os.path.basename(dest)],
+            'RF': [qualRF],
+            'Preset': [preset],
+            'Speed': [int(round(float(speed), 0))],
+            'Encoder': [encoder],
+        }
+        df = pd.DataFrame(meta_d)
+        dfs.append(df)
+
+    return dfs
 
 # Run
 def main():
-    basename_ = ''
     try:
         intro = Text('-------\nWelcome to the Handbrake Metadata Dumper!' \
         '\nThis outputs a CSV of metadata (source, destination, and encoding speed) from Handbrake logs.')
         intro.show()
 
-        # get path to logs
+        # get path to logs from Handbrake installation settings?
         starting_dir = r'C:\Users\Cobalt Storm\AppData\Roaming\HandBrake\logs'
         logs = get_logs(starting_dir)
+        if not logs:
+            print('Cancelled.')
+            print('Exited.')
+            return
 
-        # get metadata
-        r_encode = r'encode_(\d{2})\.(\d{2})\.(\d{4}) (\d{2})-(\d{2})-(\d{2})\.txt'
-        r_source = r'"Path": "(.*)",'
-        r_dest = r'"File": "(.*)",'
-        r_encoder = r'"Video": {\n    "Encoder": "(.*)",'
-        r_preset = r'"Preset": "(.*)",'
-        r_RF = r'"Quality": (.*),'
-        r_speed = r'work: average encoding speed for job is (.*) fps'
-        dfs = []
-        for log in logs:
-            basename_ = os.path.basename(log)
-            file_content = ''
-            with open(log, 'r') as f:
-                file_content = f.read()
-            e_grp = search(pattern=r_encode, string=os.path.basename(log)).groups()
-            encode = f'{e_grp[2]}-{e_grp[0]}-{e_grp[1]} {e_grp[3]}:{e_grp[4]}:{e_grp[5]}'
-            source = search(pattern=r_source, string=file_content).group(1)
-            dest = search(pattern=r_dest, string=file_content).group(1)
-            encoder = search(pattern=r_encoder, string=file_content).group(1)
-            preset = search(pattern=r_preset, string=file_content).group(1)
-            qualRF = search(pattern=r_RF, string=file_content).group(1)
-            speed = search(pattern=r_speed, string=file_content).group(1)
-            meta_d = {
-                'Encode': [encode],
-                'Source': [os.path.basename(source)],       # TODO: reuse these paths to get video metadata
-                'Destination': [os.path.basename(dest)],
-                'RF': [qualRF],
-                'Preset': [preset],
-                'Speed': [int(round(float(speed), 0))],
-                'Encoder': [encoder],
-            }
-            df = pd.DataFrame(meta_d)
-            dfs.append(df)
-        if len(dfs) > 0:
-            metadata_table = pd.concat(dfs).reset_index(drop=True)
-            print(metadata_table)
-            metadata_table.to_csv(f'output_encspeed.csv')
-            print('Created CSV.')
-        else:
-            print('cancelled.')
+        dfs = get_log_data(logs)
+        metadata_table = pd.concat(dfs).reset_index(drop=True)
+        print(metadata_table)
+
+        metadata_table.to_csv(f'output_encspeed.csv')
+        print('Created CSV.')
+
 
     except Exception as e:
         print(e)
-        print(f'Filename: {basename_}')
         raise(e)
         #time.sleep(2)
 
