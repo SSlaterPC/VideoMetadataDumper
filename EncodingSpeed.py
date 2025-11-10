@@ -17,22 +17,11 @@ import re
 from re import search, findall
 import tkinter as tk
 import tkinter.filedialog as fd
+import VideoMetadata as vm
 
 
 
 
-
-
-# Classes
-class Text:
-    ''''''
-    def __init__(self, body_text=''):
-        self.body_text = body_text
-        return
-
-    def show(self):
-        print(self.body_text)
-        return
 
 
 # Functions
@@ -86,7 +75,7 @@ def get_log_data(logs: list[str]) -> list[pd.DataFrame]:
 # Run
 def main():
     try:
-        intro = Text('-------\nWelcome to the Handbrake Metadata Dumper!' \
+        intro = vm.Text('-------\nWelcome to the Handbrake Metadata Dumper!' \
         '\nThis outputs a CSV of metadata (source, destination, and encoding speed) from Handbrake logs.')
         intro.show()
 
