@@ -160,7 +160,7 @@ def reorder_columns(columns: list[str], audio_count: int):
         columns += [f'Arate{j}']
     return columns
 
-def add_dummy_columns(df: pd.DataFrame, insert_at: tuple) -> pd.DataFrame:
+def add_dummy_columns(df: pd.DataFrame, insert_at: list[int]) -> pd.DataFrame:
     '''Return a dataframe copy with extra empty columns added.
     'insert_at' are the indices of the input dataframe where you want to add a column.
     Repeat the same index for multiple dummy columns in the same spot.'''
@@ -180,7 +180,7 @@ def add_dummy_columns(df: pd.DataFrame, insert_at: tuple) -> pd.DataFrame:
 
     return dfd
 
-def organize_df(metadata_df: pd.DataFrame, audio_count: int):
+def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at: list[int]) -> pd.DataFrame:
     ''''''
     columns = ['DateCreated', 
                 'DateModified', 
@@ -197,10 +197,17 @@ def organize_df(metadata_df: pd.DataFrame, audio_count: int):
                 'Vrate']
     cols = reorder_columns(columns=columns, audio_count=audio_count)
     mtable = metadata_df[cols]
-    mtable = add_dummy_columns(df=mtable, insert_at=(12, 12, 12))
+    mtable = add_dummy_columns(df=mtable, insert_at=insert_dummy_col_at)
     print(mtable.columns)
     pprint(mtable)
     return mtable
+
+def create_metadata_table(videos: list[str], insert_dummy_col_at: list[int]) -> pd.DataFrame:
+    ''''''
+    dfs, audio_count = get_metadata(videos=videos)
+    df = pd.concat(dfs).reset_index(drop=True)
+    df = organize_df(df, audio_count, insert_dummy_col_at)
+    return df
 
 
 # Run
@@ -210,17 +217,18 @@ def main():
         intro = Text('-------\nWelcome to the Video Metadata Dumper!' \
         '\nThis outputs the chosen metadata of selected video files into a CSV.')
         intro.show()
-        starting_dir = r'A:\Videos\Editing Exports\Handbrake'
 
+        starting_dir = r'A:\Videos\Editing Exports\Handbrake'
         videos = get_videos(starting_dir=starting_dir)
-        dfs, audio_count = get_metadata(videos=videos)
-        if len(dfs):
-            metadata_table = pd.concat(dfs).reset_index(drop=True)
-            mtable2 = organize_df(metadata_df=metadata_table, audio_count=audio_count)
-            mtable2.to_csv(f'output.csv')
-            print('Created CSV.')
-        else:
-            print('cancelled.')
+        if not videos:
+            print('Cancelled.')
+            print('Exited.')
+            return
+
+        mtable = create_metadata_table(videos, insert_dummy_col_at=[12, 12, 12])
+
+        mtable.to_csv(f'output.csv')
+        print('Created CSV.')
 
     except Exception as e:
         print(e)
