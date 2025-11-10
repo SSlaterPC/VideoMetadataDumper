@@ -17,7 +17,7 @@ import re
 from re import search, findall
 import tkinter as tk
 import tkinter.filedialog as fd
-import VideoMetadata as vm
+from VideoMetadata import Text
 
 
 
@@ -69,13 +69,15 @@ def get_log_data(logs: list[str]) -> list[pd.DataFrame]:
         }
         df = pd.DataFrame(meta_d)
         dfs.append(df)
-
-    return dfs
+    dfm = pd.concat(dfs).reset_index(drop=True)
+    # sort by encode timestamp
+    dfm = dfm.sort_values('Encode').reset_index(drop=True)
+    return dfm
 
 # Run
 def main():
     try:
-        intro = vm.Text('-------\nWelcome to the Handbrake Metadata Dumper!' \
+        intro = Text('-------\nWelcome to the Handbrake Metadata Dumper!' \
         '\nThis outputs a CSV of metadata (source, destination, and encoding speed) from Handbrake logs.')
         intro.show()
 
@@ -87,8 +89,7 @@ def main():
             print('Exited.')
             return
 
-        dfs = get_log_data(logs)
-        metadata_table = pd.concat(dfs).reset_index(drop=True)
+        metadata_table = get_log_data(logs)
         print(metadata_table)
 
         metadata_table.to_csv(f'output_encspeed.csv')

@@ -141,7 +141,7 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
             if stream['codec_type'] == 'audio':
                 audio_bitrates[f'Arate{i}'] = [int(stream['bit_rate'])]
                 i += 1
-                if i > 6:   # I only gave audio 6 columns in the benchmark spreadsheet
+                if i > 5:   # I only gave audio 5 columns in the benchmark spreadsheet
                     break
 
         # max audio streams
@@ -175,12 +175,14 @@ def add_dummy_columns(df: pd.DataFrame, insert_at: list[int]) -> pd.DataFrame:
     dnum = 1
     for name in colnames:
         col_loc = dfd.columns.get_loc(name)
+        while f'D{dnum}' in dfd.columns:    # for combining multiple dataframes that already have dummy columns
+            dnum += 1
         dfd.insert(loc=col_loc, column=f'D{dnum}', value=None)
         dnum += 1
 
     return dfd
 
-def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at: list[int]) -> pd.DataFrame:
+def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at=[]) -> pd.DataFrame:
     ''''''
     columns = ['DateCreated', 
                 'DateModified', 
@@ -198,11 +200,9 @@ def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at
     cols = reorder_columns(columns=columns, audio_count=audio_count)
     mtable = metadata_df[cols]
     mtable = add_dummy_columns(df=mtable, insert_at=insert_dummy_col_at)
-    print(mtable.columns)
-    pprint(mtable)
     return mtable
 
-def create_metadata_table(videos: list[str], insert_dummy_col_at: list[int]) -> pd.DataFrame:
+def create_metadata_table(videos: list[str], insert_dummy_col_at=[]) -> pd.DataFrame:
     ''''''
     dfs, audio_count = get_metadata(videos=videos)
     df = pd.concat(dfs).reset_index(drop=True)
@@ -226,7 +226,8 @@ def main():
             return
 
         mtable = create_metadata_table(videos, insert_dummy_col_at=[12, 12, 12])
-
+        print(mtable.columns)
+        pprint(mtable)
         mtable.to_csv(f'output.csv')
         print('Created CSV.')
 
