@@ -46,5 +46,5 @@ def test_add_dummy_columns():
     df_dummy = vm.add_dummy_columns(df, insert_at=(0, 1, 1, -1))
     #pprint(df_dummy)
     #pprint(expected_dummy)
-    assert all(df_dummy.columns == expected_dummy.columns)
+    assert all(df_dummy == expected_dummy)
 
