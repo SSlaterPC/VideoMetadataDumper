@@ -35,6 +35,19 @@ class Text:
         return
 
 
+# Functions
+def get_logs(starting_dir: str, show=True):
+    ''''''
+    root = tk.Tk()
+    root.withdraw()
+    logs = fd.askopenfilenames(parent=root, title='Select Handbrake Encoding Logs',
+                                filetypes=[('Handbrake Encoding Logs', '.txt')],
+                                initialdir=starting_dir)
+    if show:
+        pprint([os.path.basename(log) for log in logs])
+    return logs
+
+
 # Run
 def main():
     basename_ = ''
@@ -43,14 +56,9 @@ def main():
         '\nThis outputs a CSV of metadata (source, destination, and encoding speed) from Handbrake logs.')
         intro.show()
 
-        # change this to always be wherever your Handbrake log path is; get it from the Handbrake installation settings?
+        # get path to logs
         starting_dir = r'C:\Users\Cobalt Storm\AppData\Roaming\HandBrake\logs'
-
-        root = tk.Tk()
-        root.withdraw()
-        logs = fd.askopenfilenames(parent=root, title='Select Video Files', filetypes=[('Logs', '*.txt')],
-                                   initialdir=starting_dir)
-        pprint([os.path.basename(log) for log in logs])
+        logs = get_logs(starting_dir)
 
         # get metadata
         r_encode = r'encode_(\d{2})\.(\d{2})\.(\d{4}) (\d{2})-(\d{2})-(\d{2})\.txt'
