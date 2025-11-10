@@ -1,5 +1,7 @@
 # Imports
 import pytest
+import VideoMetadata as vm
+import EncodingSpeed as es
 
 
 # tests

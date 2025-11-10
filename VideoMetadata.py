@@ -7,6 +7,7 @@ Description: Output a CSV of metadata from selected video file(s).
 '''
 
 # Imports
+from copy import deepcopy
 import cProfile
 import datetime
 import ffmpeg
@@ -81,11 +82,12 @@ def get_videos(starting_dir: str, show=True):
     root = tk.Tk()
     root.withdraw()
     #videos = fd.askopenfilenames(parent=root, title='Select Video Files', filetypes=[('Video files', '*.mp4')])
-    videos = fd.askopenfilenames(parent=root, title='Select Video Files', initialdir=starting_dir)
+    video_exts = '*.mp4 *.mpg *.avi *.mov *.ts *.mts *.vob *.wmv *.webm'
+    videos = fd.askopenfilenames(parent=root, title='Select Video Files', initialdir=starting_dir,
+                                 filetypes=[('Video files', video_exts)])
     if show:
         pprint([os.path.basename(video) for video in videos])
     return videos
-
 
 def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
     ''''''
@@ -150,13 +152,18 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
 
     return dfs, audio_count
 
-
 def reorder_columns(columns: list[str], audio_count: int):
     ''''''
-    print(f'audio tracks: {audio_count}')
     for j in range(1, audio_count + 1):
         columns += [f'Arate{j}']
     return columns
+
+def add_dummy_columns(metadata_table: pd.DataFrame) -> pd.DataFrame:
+    '''Return a dataframe copy with extra empty columns added.
+    For now, change the placement of dummy cols every time you change the benchmark spreadsheet cols.'''
+    df = deepcopy(metadata_table)
+
+    return df
 
 
 # Run
@@ -188,7 +195,7 @@ def main():
                        'SizeKB', 
                        'Vrate']
             cols = reorder_columns(columns=columns, audio_count=audio_count)
-            pprint(cols)
+            print(cols)
             mtable = metadata_table[cols]
             pprint(mtable)
             mtable.to_csv(f'output.csv')
@@ -206,8 +213,6 @@ def main():
     print('Exited.')
     #time.sleep(1)
     return
-
-
 
 
 if __name__ == '__main__':
