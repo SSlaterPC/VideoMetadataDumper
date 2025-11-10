@@ -1,5 +1,7 @@
 # Imports
+import numpy as np
 import pandas as pd
+from pprint import pprint
 import pytest
 import VideoMetadata as vm
 import EncodingSpeed as es
@@ -23,6 +25,26 @@ def example_videos():
     return videos
 
 # Tests
-def test_test():
-    assert True
+def test_add_dummy_columns():
+    data = {
+        'Col1': ['data', 'data'],
+        'Col2': ['data', 'data'],
+        'Col3': ['data', 'data'],
+    }
+    data_dummy2 = {
+        'D1': [np.nan, np.nan], 
+        'Col1': ['data', 'data'],
+        'D2': [np.nan, np.nan], 
+        'D3': [np.nan, np.nan], 
+        'Col2': ['data', 'data'],
+        'D4': [np.nan, np.nan], 
+        'Col3': ['data', 'data'],
+    }
+    expected_dummy = pd.DataFrame(data=data_dummy2)
+    
+    df = pd.DataFrame(data)
+    df_dummy = vm.add_dummy_columns(df, insert_at=(0, 1, 1, -1))
+    #pprint(df_dummy)
+    #pprint(expected_dummy)
+    assert all(df_dummy.columns == expected_dummy.columns)
 

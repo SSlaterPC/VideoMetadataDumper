@@ -82,7 +82,7 @@ def get_videos(starting_dir: str, show=True):
     root = tk.Tk()
     root.withdraw()
     #videos = fd.askopenfilenames(parent=root, title='Select Video Files', filetypes=[('Video files', '*.mp4')])
-    video_exts = '*.mp4 *.mpg *.avi *.mov *.ts *.mts *.vob *.wmv *.webm'
+    video_exts = '.mp4 .mpg .avi .mov .ts .mts .vob .wmv .webm'
     videos = fd.askopenfilenames(parent=root, title='Select Video Files', initialdir=starting_dir,
                                  filetypes=[('Video files', video_exts)])
     if show:
@@ -158,12 +158,27 @@ def reorder_columns(columns: list[str], audio_count: int):
         columns += [f'Arate{j}']
     return columns
 
-def add_dummy_columns(metadata_table: pd.DataFrame) -> pd.DataFrame:
+def add_dummy_columns(df: pd.DataFrame, insert_at: tuple) -> pd.DataFrame:
     '''Return a dataframe copy with extra empty columns added.
     For now, change the placement of dummy cols every time you change the benchmark spreadsheet cols.'''
-    df = deepcopy(metadata_table)
+    dfd = deepcopy(df)
 
-    return df
+    # get OG column labels
+    colnames = []
+    for i in insert_at:
+        colnames.append(df.columns[i])
+
+    # insert columns
+    dnum = 1
+    for name in colnames:
+        col_loc = dfd.columns.get_loc(name)
+        print(name)
+        print(f'col_loc={col_loc}')
+        dfd.insert(loc=col_loc, column=f'D{dnum}', value=None)
+        pprint(dfd)
+        dnum += 1
+
+    return dfd
 
 
 # Run
