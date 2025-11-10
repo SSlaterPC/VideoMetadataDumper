@@ -141,6 +141,8 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
             if stream['codec_type'] == 'audio':
                 audio_bitrates[f'Arate{i}'] = [int(stream['bit_rate'])]
                 i += 1
+                if i > 6:   # I only gave audio 6 columns in the benchmark spreadsheet
+                    break
 
         # max audio streams
         if audio_count < i:
@@ -160,7 +162,8 @@ def reorder_columns(columns: list[str], audio_count: int):
 
 def add_dummy_columns(df: pd.DataFrame, insert_at: tuple) -> pd.DataFrame:
     '''Return a dataframe copy with extra empty columns added.
-    For now, change the placement of dummy cols every time you change the benchmark spreadsheet cols.'''
+    'insert_at' are the indices of the input dataframe where you want to add a column.
+    Repeat the same index for multiple dummy columns in the same spot.'''
     dfd = deepcopy(df)
 
     # get OG column labels
@@ -172,13 +175,32 @@ def add_dummy_columns(df: pd.DataFrame, insert_at: tuple) -> pd.DataFrame:
     dnum = 1
     for name in colnames:
         col_loc = dfd.columns.get_loc(name)
-        print(name)
-        print(f'col_loc={col_loc}')
         dfd.insert(loc=col_loc, column=f'D{dnum}', value=None)
-        pprint(dfd)
         dnum += 1
 
     return dfd
+
+def organize_df(metadata_df: pd.DataFrame, audio_count: int):
+    ''''''
+    columns = ['DateCreated', 
+                'DateModified', 
+                'Name', 
+                'Extension', 
+                'Codec', 
+                'EncProfile', 
+                'EncLevel',
+                'FPS', 
+                'Len', 
+                'Frames', 
+                'Res', 
+                'SizeKB', 
+                'Vrate']
+    cols = reorder_columns(columns=columns, audio_count=audio_count)
+    mtable = metadata_df[cols]
+    mtable = add_dummy_columns(df=mtable, insert_at=(12, 12, 12))
+    print(mtable.columns)
+    pprint(mtable)
+    return mtable
 
 
 # Run
@@ -188,32 +210,14 @@ def main():
         intro = Text('-------\nWelcome to the Video Metadata Dumper!' \
         '\nThis outputs the chosen metadata of selected video files into a CSV.')
         intro.show()
-
         starting_dir = r'A:\Videos\Editing Exports\Handbrake'
+
         videos = get_videos(starting_dir=starting_dir)
-
         dfs, audio_count = get_metadata(videos=videos)
-
         if len(dfs):
             metadata_table = pd.concat(dfs).reset_index(drop=True)
-            columns = ['DateCreated', 
-                       'DateModified', 
-                       'Name', 
-                       'Extension', 
-                       'Codec', 
-                       'EncProfile', 
-                       'EncLevel',
-                       'FPS', 
-                       'Len', 
-                       'Frames', 
-                       'Res', 
-                       'SizeKB', 
-                       'Vrate']
-            cols = reorder_columns(columns=columns, audio_count=audio_count)
-            print(cols)
-            mtable = metadata_table[cols]
-            pprint(mtable)
-            mtable.to_csv(f'output.csv')
+            mtable2 = organize_df(metadata_df=metadata_table, audio_count=audio_count)
+            mtable2.to_csv(f'output.csv')
             print('Created CSV.')
         else:
             print('cancelled.')
