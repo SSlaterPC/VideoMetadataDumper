@@ -14,10 +14,9 @@ import pandas as pd
 from pprint import pprint
 from re import search
 import VideoMetadata as vm
+from VideoMetadata import MAX_AUDIO_STREAMS
 import EncodingSpeed as es
 
-# Constants
-MAX_AUDIO_STREAMS = 5   # number of audio bitrate columns in benchmark spreadsheet
 
 # Functions
 def get_combined_metadata(logs: list[str]) -> list[pd.DataFrame]:
