@@ -107,7 +107,8 @@ def main():
             return
 
         df = get_combined_metadata(logs)
-        pprint(df)
+        print(df.columns)
+        print(df)
         df.to_csv(f'output.csv')
         print('Created CSV.')
 

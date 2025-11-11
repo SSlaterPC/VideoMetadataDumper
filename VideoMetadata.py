@@ -115,7 +115,8 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
                 metav = meta['streams'][i]
                 break
             else:
-                print(f"codec_type: {stream['codec_type']}")
+                #print(f"codec_type: {stream['codec_type']}")
+                pass
 
         relevant_meta = {
             'DateCreated': date_created,
