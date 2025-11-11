@@ -56,8 +56,8 @@ def get_combined_metadata(logs: list[str]) -> list[pd.DataFrame]:
     # this will change every time I move a spreadsheet column
     dummies = [
         [12]*3,
-        [14]*(4 + MAX_AUDIO_STREAMS - audio_count_src),
-        [28]*5
+        [13 + audio_count_src]*(4 + MAX_AUDIO_STREAMS - audio_count_src),
+        [13 + audio_count_src + 14]*5
     ]
     dummy_cols = []
     for d in dummies:
