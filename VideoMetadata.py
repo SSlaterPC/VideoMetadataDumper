@@ -21,6 +21,11 @@ import time
 import tkinter as tk
 import tkinter.filedialog as fd
 
+
+# Constants
+MAX_AUDIO_STREAMS = 5   # number of audio bitrate columns in benchmark spreadsheet
+
+
 # Classes
 class Text:
     ''''''
@@ -123,7 +128,7 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
             'FPS': [round(float(Fraction(metav['r_frame_rate'])), 2)],     # was eval(), oof
             'Len': [float(metav['duration'])],
             'Res': [f"{metav['width']}x{metav['height']}"],
-            'SizeKB': [round(float(meta['format']['size']) / 1024, 3)],   # Bytes to KB
+            'SizeKB': [float(meta['format']['size']) / 1024],   # Bytes to KB
             }
 
         try:     # N/A for MPEG-1 and MPEG-TS
@@ -136,20 +141,32 @@ def get_metadata(videos: list[str]) -> list[pd.DataFrame]:
 
         # skip tracks that don't exist
         audio_bitrates = {}
-        i = 1
+        i = 0
+        total_audio = 0
         for stream in meta['streams']:
             if stream['codec_type'] == 'audio':
-                audio_bitrates[f'Arate{i}'] = [int(stream['bit_rate'])]
-                i += 1
-                if i > 5:   # I only gave audio 5 columns in the benchmark spreadsheet
-                    break
+                if i < MAX_AUDIO_STREAMS:
+                    i += 1
+                    audio_bitrates[f'Arate{i}'] = [int(stream['bit_rate'])]
+                # sum all audio bitrates
+                total_audio += int(stream['bit_rate'])
+
 
         # max audio streams
         if audio_count < i:
-            audio_count = i - 1 
-            
+            audio_count = i
+        
         rm = relevant_meta | mpg_meta | audio_bitrates
-        df = pd.DataFrame(rm)
+        df = pd.DataFrame(rm)   # length is 1, because it is one record
+
+        # For MPEG and MPEG-TS, calc missing values
+        df['TotalAudio'] = total_audio
+        if len(df['Vrate'].isna()) > 0:
+            df['Vrate'] = (df['SizeKB']*1024*8 / df['Len'] - df['TotalAudio']).round(0).astype(int)
+        if len(df['Frames'].isna()) > 0:
+            df['Frames'] = (df['Len'] * df['FPS']).round(0).astype(int)
+
+        df['SizeKB'] = df['SizeKB'].round(3)
         dfs.append(df)
 
     return dfs, audio_count
@@ -158,9 +175,10 @@ def reorder_columns(columns: list[str], audio_count: int):
     ''''''
     for j in range(1, audio_count + 1):
         columns += [f'Arate{j}']
+    columns += ['TotalAudio']
     return columns
 
-def add_dummy_columns(df: pd.DataFrame, insert_at: list[int]) -> pd.DataFrame:
+def add_dummy_columns_old(df: pd.DataFrame, insert_at: list[str]) -> pd.DataFrame:
     '''Return a dataframe copy with extra empty columns added.
     'insert_at' are the indices of the input dataframe where you want to add a column.
     Repeat the same index for multiple dummy columns in the same spot.'''
@@ -182,6 +200,21 @@ def add_dummy_columns(df: pd.DataFrame, insert_at: list[int]) -> pd.DataFrame:
 
     return dfd
 
+def add_dummy_columns(df: pd.DataFrame, insert_at_names: dict[str: int]) -> pd.DataFrame:
+    '''Return a dataframe copy with extra empty columns added.
+    'insert_at_name' are the column names of the input dataframe where you want to add a column.
+    It takes the format {'column name': amount of dummy columns to insert}.'''
+    dfd = deepcopy(df)
+    dnum = 1
+    for dname, amount in zip(insert_at_names, insert_at_names.values()):
+        dloc = dfd.columns.get_loc(dname)
+        for i in range(amount):
+            while f'D{dnum}' in dfd.columns:    # avoid duplicate cols
+                dnum += 1
+            dfd.insert(loc=dloc, column=f'D{dnum}', value=None)
+        dnum += 1
+    return dfd
+
 def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at=[]) -> pd.DataFrame:
     ''''''
     columns = ['DateCreated', 
@@ -199,7 +232,7 @@ def organize_df(metadata_df: pd.DataFrame, audio_count: int, insert_dummy_col_at
                 'Vrate']
     cols = reorder_columns(columns=columns, audio_count=audio_count)
     mtable = metadata_df[cols]
-    mtable = add_dummy_columns(df=mtable, insert_at=insert_dummy_col_at)
+    mtable = add_dummy_columns_old(df=mtable, insert_at=insert_dummy_col_at)
     return mtable
 
 def create_metadata_table(videos: list[str], insert_dummy_col_at=[]) -> pd.DataFrame:

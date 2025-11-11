@@ -41,6 +41,7 @@ def get_combined_metadata(logs: list[str]) -> list[pd.DataFrame]:
         'Res': 'SRes',
         'SizeKB': 'SsizeKB',
         'Vrate': 'SV-BR',
+        'TotalAudio': 'SA-BR',
     }
     for i in range(1, audio_count_src + 1):
         column_names_src[f'Arate{i}'] = f'SA{i}'
@@ -53,15 +54,15 @@ def get_combined_metadata(logs: list[str]) -> list[pd.DataFrame]:
 
     # empty columns that reduces number of manual copypaste operations
     # this will change every time I move a spreadsheet column
-    dummies = [
-        [12]*3,
-        [13 + audio_count_src]*(4 + MAX_AUDIO_STREAMS - audio_count_src),
-        [13 + audio_count_src + 14]*5
-    ]
-    dummy_cols = []
-    for d in dummies:
-        dummy_cols += d
-    padded = vm.add_dummy_columns(combined, insert_at=dummy_cols)
+    # {column: number of dummies}
+    dummies_at = {
+        'SV-BR': 3,
+        'SA-BR': MAX_AUDIO_STREAMS - audio_count_src,
+        'RF': 3,
+        'Vrate': 5,
+        'TotalAudio': MAX_AUDIO_STREAMS - audio_count_dest,
+    }
+    padded = vm.add_dummy_columns(combined, insert_at_names=dummies_at)
     return padded
 
 def get_logged_filepaths(logs: list[str]) -> list[pd.DataFrame]:
