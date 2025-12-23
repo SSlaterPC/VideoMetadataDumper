@@ -1,4 +1,4 @@
-Video Metadata Dumper
+## Video Metadata Dumper
 
 Reads handbrake encoding logs, gets the input/output files, then dumps a the following bits of metadata into a .csv file.
 For both input and output files:
