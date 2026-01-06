@@ -1,6 +1,6 @@
 ## Video Metadata Dumper
 
-Reads encoding logs output by HandBrake, gets the input/output files from the logs, then dumps a the following metadata into a .csv file.
+Reads encoding logs output by HandBrake, gets the input/output files from the logs, then dumps the following metadata into a .csv file.
 
 For both input and output files:
 - Filename
